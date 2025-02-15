@@ -1,8 +1,8 @@
-package com.danidipp.paperplugin
+package com.danidipp.sneakymisc
 
 import org.bukkit.plugin.java.JavaPlugin
 
-class PaperPlugin : JavaPlugin() {
+class SneakyMisc : JavaPlugin() {
 
     override fun onLoad() {
         instance = this
@@ -12,12 +12,12 @@ class PaperPlugin : JavaPlugin() {
     }
 
     companion object {
-        const val IDENTIFIER = "paperplugin"
+        const val IDENTIFIER = "sneakymisc"
         const val AUTHORS = "Team Sneakymouse"
         const val VERSION = "1.0"
-        private lateinit var instance: PaperPlugin
+        private lateinit var instance: SneakyMisc
 
-        fun getInstance(): PaperPlugin {
+        fun getInstance(): SneakyMisc {
             return instance
         }
     }
