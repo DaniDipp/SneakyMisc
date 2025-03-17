@@ -1,5 +1,9 @@
 package com.danidipp.sneakymisc
 
+import com.danidipp.sneakymisc.databasesync.DBSyncModule
+import com.danidipp.sneakymisc.elevators.ElevatorsModule
+import com.danidipp.sneakymisc.inventorygames.InventoryGamesModule
+import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 
 class SneakyMisc : JavaPlugin() {
@@ -8,7 +12,16 @@ class SneakyMisc : JavaPlugin() {
         instance = this
     }
     override fun onEnable() {
-        saveDefaultConfig()
+        registerModule(ElevatorsModule(logger))
+//        registerModule(DBSyncModule(true, true))
+    }
+
+    private fun registerModule(module: SneakyModule) {
+        logger.info("Registering module ${module.javaClass.name} with ${module.commands.size} commands and ${module.listeners.size} listeners")
+        Bukkit.getServer().commandMap.registerAll(IDENTIFIER, module.commands)
+        for (listener in module.listeners) {
+            Bukkit.getServer().pluginManager.registerEvents(listener, this)
+        }
     }
 
     companion object {

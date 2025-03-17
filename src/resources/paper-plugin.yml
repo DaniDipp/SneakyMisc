@@ -5,3 +5,11 @@ api-version: "1.20"
 authors:
   - DaniDipp
 description: "Paper plugin for Lords of Minecraft mechanics that don't justify having a plugin of their own"
+dependencies:
+  server:
+    SneakyCharacterManager:
+      load: BEFORE
+      required: false
+    SneakyPocketbase:
+      load: BEFORE
+      required: true
