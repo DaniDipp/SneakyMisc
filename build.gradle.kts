@@ -27,11 +27,10 @@ dependencies {
 
 tasks.jar {
 	manifest {
-		attributes["Main-Class"] = "com.danidipp.sneakymisc.SneakyMisc"
+		attributes["Main-Class"] = "com.danidipp.sneakymisc"
 	}
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-	from(configurations.compileClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+	from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
 }
 
 configure<JavaPluginExtension> {

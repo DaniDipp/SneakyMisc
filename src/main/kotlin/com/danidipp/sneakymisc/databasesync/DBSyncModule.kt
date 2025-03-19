@@ -1,40 +1,88 @@
 package com.danidipp.sneakymisc.databasesync
 
+import com.danidipp.sneakymisc.SneakyMisc
 import com.danidipp.sneakymisc.SneakyModule
+import com.danidipp.sneakypocketbase.PBRunnable
 import com.danidipp.sneakypocketbase.SneakyPocketbase
-import net.sneakycharactermanager.paper.SneakyCharacterManager
 import net.sneakycharactermanager.paper.handlers.character.LoadCharacterEvent
+import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
+import java.util.logging.Logger
 
-class DBSyncModule(val sneakyPocketbaseAvailable: Boolean, val sneakyCharacterManagerAvailable: Boolean) : SneakyModule {
+class DBSyncModule(val logger: Logger) : SneakyModule {
     override val commands: List<Command> = listOf()
-    override val listeners: List<Listener> = getListeners()
-
-    private fun getListeners(): List<Listener> {
-        if (!sneakyPocketbaseAvailable) {
-            return emptyList()
-        }
-        val pb = SneakyPocketbase.getInstance()
-
-        val listeners = mutableListOf<Listener>(object : Listener {
-            @EventHandler
-            fun onPlayerJoin(event: PlayerJoinEvent) {
-                val player = event.player
-                // sync player data
+    override val listeners: List<Listener>
+        get() {
+            if (!Bukkit.getPluginManager().isPluginEnabled("SneakyPocketbase")) {
+                return emptyList()
             }
-        })
 
-        if (sneakyCharacterManagerAvailable) {
-            listeners.add(object : Listener {
+            val listeners = mutableListOf<Listener>(object : Listener {
                 @EventHandler
-                fun onChangeCharacter(event: LoadCharacterEvent) {
-//                    pb.pb().collections.update<>()
+                fun onPlayerJoin(event: PlayerJoinEvent) {
+                    logger.info("Player ${event.player.name} joined, scheduling account sync")
+                    Bukkit.getScheduler().runTaskAsynchronously(SneakyMisc.getInstance(), PBRunnable {
+                        logger.info("Running account sync for ${event.player.name}")
+                        val pb = SneakyPocketbase.getInstance()
+                        val player = event.player
+                        val uuid = player.uniqueId.toString()
+                        val record = runCatching { pb.pb().records.getOne<AccountRecord>("lom2_accounts", uuid) }.getOrNull()
+                        if (record == null) {
+                            logger.info("Creating new account record for ${player.name}")
+                            pb.pb().records.create<AccountRecord>("lom2_accounts", AccountRecord(
+                                recordId = uuid,
+                                name = player.name,
+                                owner = "",
+                                main = false
+                            ).toJson(AccountRecord.serializer()))
+                            return@PBRunnable
+                        }
+                        if (record.name != player.name) {
+                            logger.info("Updating account record for ${player.name}")
+                            record.name = player.name
+                            pb.pb().records.update<AccountRecord>("lom2_accounts", uuid, record.toJson(AccountRecord.serializer()))
+                        } else {
+                            logger.info("Account record for ${player.name} is up to date")
+                        }
+                    })
                 }
             })
+
+            if (Bukkit.getPluginManager().isPluginEnabled("SneakyCharacterManager")) {
+                listeners.add(object : Listener {
+                    @EventHandler
+                    fun onChangeCharacter(event: LoadCharacterEvent) {
+                        logger.info("Character ${event.characterName} loaded, scheduling character sync")
+                        Bukkit.getScheduler().runTaskAsynchronously(SneakyMisc.getInstance(), PBRunnable {
+                            logger.info("Running character sync for ${event.characterName}")
+                            val pb = SneakyPocketbase.getInstance()
+                            val player = event.player
+                            val record = runCatching { pb.pb().records.getOne<CharacterRecord>("lom2_characters", event.characterUUID) }.getOrNull()
+                            if (record == null) {
+                                logger.info("Creating new character record for ${player.name}")
+                                pb.pb().records.create<CharacterRecord>("lom2_characters", CharacterRecord(
+                                    recordId = event.characterUUID,
+                                    name = player.name,
+                                    account = player.uniqueId.toString(),
+                                    tags = event.tags
+                                ).toJson(CharacterRecord.serializer()))
+                                return@PBRunnable
+                            }
+                            if (record.name != event.characterName || record.tags != event.tags) {
+                                logger.info("Updating character record for ${player.name}")
+                                record.name = player.name
+                                record.tags = event.tags
+                                pb.pb().records.update<CharacterRecord>("lom2_characters", event.characterUUID, record.toJson(CharacterRecord.serializer()))
+                            } else {
+                                logger.info("Character record for ${player.name} is up to date")
+                            }
+                        })
+                    }
+                })
+            }
+            return listeners
         }
-        return listeners
-    }
 }

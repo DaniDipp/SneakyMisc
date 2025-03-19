@@ -13,7 +13,7 @@ class SneakyMisc : JavaPlugin() {
     }
     override fun onEnable() {
         registerModule(ElevatorsModule(logger))
-//        registerModule(DBSyncModule(true, true))
+        registerModule(DBSyncModule(logger))
     }
 
     private fun registerModule(module: SneakyModule) {
