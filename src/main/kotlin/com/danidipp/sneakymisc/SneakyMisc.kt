@@ -15,6 +15,7 @@ class SneakyMisc : JavaPlugin() {
     }
     override fun onEnable() {
         registerModule(ElevatorsModule(logger))
+        registerModule(MetaOverlayHelper(logger))
 
         if (Bukkit.getPluginManager().isPluginEnabled("SneakyPocketbase")) {
             registerModule(DBSyncModule(logger))
