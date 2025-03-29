@@ -4,6 +4,7 @@ import com.danidipp.sneakymisc.SneakyMisc
 import com.danidipp.sneakymisc.SneakyModule
 import com.danidipp.sneakypocketbase.PBRunnable
 import com.danidipp.sneakypocketbase.SneakyPocketbase
+import kotlinx.serialization.json.Json
 import net.sneakycharactermanager.paper.handlers.character.LoadCharacterEvent
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
@@ -60,24 +61,25 @@ class DBSyncModule(val logger: Logger) : SneakyModule {
                             logger.info("Running character sync for ${event.characterName}")
                             val pb = SneakyPocketbase.getInstance()
                             val player = event.player
+                            val tags = Json.decodeFromString<Map<String, String>>(event.tags)
                             val record = runCatching { pb.pb().records.getOne<CharacterRecord>("lom2_characters", event.characterUUID) }.getOrNull()
                             if (record == null) {
-                                logger.info("Creating new character record for ${player.name}")
+                                logger.info("Creating new character record for ${event.characterName}")
                                 pb.pb().records.create<CharacterRecord>("lom2_characters", CharacterRecord(
                                     recordId = event.characterUUID,
-                                    name = player.name,
+                                    name = event.characterName,
                                     account = player.uniqueId.toString(),
-                                    tags = event.tags
+                                    tags = tags
                                 ).toJson(CharacterRecord.serializer()))
                                 return@PBRunnable
                             }
-                            if (record.name != event.characterName || record.tags != event.tags) {
-                                logger.info("Updating character record for ${player.name}")
-                                record.name = player.name
-                                record.tags = event.tags
+                            if (record.name != event.characterName || record.tags != tags) {
+                                logger.info("Updating character record for ${event.characterName}")
+                                record.name = event.characterName
+                                record.tags = tags
                                 pb.pb().records.update<CharacterRecord>("lom2_characters", event.characterUUID, record.toJson(CharacterRecord.serializer()))
                             } else {
-                                logger.info("Character record for ${player.name} is up to date")
+                                logger.info("Character record for ${event.characterName} is up to date")
                             }
                         })
                     }

@@ -18,5 +18,5 @@ data class CharacterRecord(
     @Transient override val recordId: String? = null,
     var name: String,
     val account: String,
-    var tags: String,
+    var tags: Map<String, String> = mapOf(),
 ): BaseRecord(recordId)

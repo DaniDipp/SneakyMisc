@@ -1,8 +1,10 @@
 package com.danidipp.sneakymisc
 
 import com.danidipp.sneakymisc.databasesync.DBSyncModule
+import com.danidipp.sneakymisc.dclock.DClockModule
 import com.danidipp.sneakymisc.elevators.ElevatorsModule
 import com.danidipp.sneakymisc.inventorygames.InventoryGamesModule
+import com.danidipp.sneakymisc.metaoverlayhelper.MetaOverlayHelper
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -13,7 +15,11 @@ class SneakyMisc : JavaPlugin() {
     }
     override fun onEnable() {
         registerModule(ElevatorsModule(logger))
-        registerModule(DBSyncModule(logger))
+
+        if (Bukkit.getPluginManager().isPluginEnabled("SneakyPocketbase")) {
+            registerModule(DBSyncModule(logger))
+            registerModule(DClockModule(logger))
+        }
     }
 
     private fun registerModule(module: SneakyModule) {
